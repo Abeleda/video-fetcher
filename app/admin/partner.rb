@@ -1,6 +1,6 @@
 ActiveAdmin.register Partner do
 
 
-permit_params :name, :login, :password
+  permit_params :name, :login, :password
 
 end
