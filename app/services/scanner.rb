@@ -76,8 +76,7 @@ class Scanner
       puts likes.count
       ActiveRecord::Base.transaction do
         (0...likes.count).each do |i|
-          puts videos[i].id
-          likes_objects << Like.create!(amount: likes[i].raw_response['summary']['total_count'], video_id: videos[i].id, shares: shares[i])
+          likes_objects << Metadata.create!(likes: likes[i].raw_response['summary']['total_count'], video_id: videos[i].id, shares: shares[i])
         end
       end
 
