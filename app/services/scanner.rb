@@ -29,11 +29,23 @@ class Scanner
       # ?id=https://www.facebook.com/nike/
       user = @graph.get_object "?id=#{@channel.url}"
       puts user
+      shares = []
+      feed = @graph.get_connection(user['id'], 'feed/?fields=object_id,source,name,created_time,updated_time,id,type,properties,shares')
+      # puts feed/
 
-      feed = @graph.get_connection(user['id'], 'feed/?fields=object_id,source,name,created_time,updated_time,id,type,properties')
-      # puts feed
       filtered_feed = []
-      feed.each {|f| filtered_feed << f if f['type'] && f['type'] == 'video'}
+      feed.each {|f|
+        if f['type'] && f['type'] == 'video'
+          filtered_feed << f
+          # # shares << f['shares']['count']
+          # puts f['shares']
+          if f['shares'] && f['shares']['count']
+            shares << f['shares']['count']
+          else
+            shares << 0
+          end
+        end
+      }
       # Potential problems
       # 1. No API for duration
       # 2. Need to check if present?
@@ -65,7 +77,7 @@ class Scanner
       ActiveRecord::Base.transaction do
         (0...likes.count).each do |i|
           puts videos[i].id
-          likes_objects << Like.create!(amount: likes[i].raw_response['summary']['total_count'], video_id: videos[i].id)
+          likes_objects << Like.create!(amount: likes[i].raw_response['summary']['total_count'], video_id: videos[i].id, shares: shares[i])
         end
       end
 

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160202143434) do
+ActiveRecord::Schema.define(version: 20160202145727) do
 
   create_table "active_admin_comments", force: :cascade do |t|
     t.string   "namespace",     limit: 255
@@ -72,6 +72,7 @@ ActiveRecord::Schema.define(version: 20160202143434) do
     t.integer  "views",      limit: 4
     t.integer  "dislikes",   limit: 4
     t.integer  "comments",   limit: 4
+    t.integer  "shares",     limit: 4
   end
 
   create_table "partners", force: :cascade do |t|
