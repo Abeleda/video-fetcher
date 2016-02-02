@@ -31,28 +31,75 @@ class Scanner
       puts user
 
       feed = @graph.get_connection(user['id'], 'feed/?fields=object_id,source,name,created_time,updated_time,id,type,properties')
-      puts feed
+      # puts feed
       filtered_feed = []
       feed.each {|f| filtered_feed << f if f['type'] && f['type'] == 'video'}
       # Potential problems
       # 1. No API for duration
       # 2. Need to check if present?
       videos = []
-      filtered_feed.each do |f|
-        time = get_video_length f
-        video = Video.find_or_initialize_by(title: f['name'], url: f['source'], published: f['created_time'], modified: f['updated_time'], uid: f['id'], channel_id: @channel.id)
-        video.duration = time if time
-        video.save
-        videos << video
+      ActiveRecord::Base.transaction do
+        filtered_feed.each do |f|
+          time = get_video_length f
+          video = Video.find_by(uid: f['id'])
+          if video
+            videos << video
+          else
+            v = Video.new(title: f['name'], url: f['source'], published: f['created_time'], modified: f['updated_time'], uid: f['id'], channel_id: @channel.id)
+            v.duration = time
+            v.save!
+            videos << v
+          end
+        end
       end
-      data = @graph.batch do |batch_api|
+
+      puts videos.count
+      likes = @graph.batch do |batch_api|
         videos.each do |video|
+          puts video.uid
           batch_api.get_connection(video.uid, 'likes?summary=true')
         end
       end
-      (0...data.count).each do |i|
-          Like.create(amount: data[i].raw_response['summary']['total_count'], video_id: videos[i].id)
+      likes_objects = []
+      puts likes.count
+      ActiveRecord::Base.transaction do
+        (0...likes.count).each do |i|
+          puts videos[i].id
+          likes_objects << Like.create!(amount: likes[i].raw_response['summary']['total_count'], video_id: videos[i].id)
+        end
       end
+
+
+      comments = @graph.batch do |batch_api|
+        videos.each do |video|
+          batch_api.get_connection(video.uid, 'comments?summary=true')
+        end
+      end
+      # puts comments
+      # comments.each do |comment|
+      #   puts comment.raw_response
+      #   break
+      # end
+      comments_objects = []
+      ActiveRecord::Base.transaction do
+        (0...comments.count).each do |i|
+          puts i
+          likes_objects[i].update_attribute(:comments, comments[i].raw_response['summary']['total_count'])
+          video = videos[i]
+          comments[i].each do |comment|
+            begin
+              c = Comment.find_or_create_by!(uid: comment['id'], content: comment['message'], video_id: video.id)
+              comments_objects << c
+
+            rescue
+              puts 'ERROR: INVALID COMMENT'
+            end
+          end
+        end
+      end
+
+
+
     end
   end
 
