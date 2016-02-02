@@ -33,14 +33,27 @@ class Scanner
       # Potential problems
       # 1. No API for duration
       # 2. Need to check if present?
+      videos = []
       filtered_feed.each do |f|
         time = get_video_length f
         video = Video.find_or_initialize_by(title: f['name'], url: f['source'], published: f['created_time'], modified: f['updated_time'], uid: f['id'], channel_id: @channel.id)
         video.duration = time if time
         video.save
-        fetch_likes video
+        videos << video
       end
-
+      data = @graph.batch do |batch_api|
+        videos.each do |video|
+          batch_api.get_connection(video.uid, 'likes?summary=true')
+        end
+      end
+      # data.each do |likes|
+      #   puts likes.raw_response
+      #
+      #   Like.create(amount: likes.raw_response['summary']['total_count'], video_id: videos[index].id)
+      # end
+      (0...data.count).each do |i|
+          Like.create(amount: data[i].raw_response['summary']['total_count'], video_id: videos[i].id)
+      end
     end
   end
 
@@ -58,10 +71,10 @@ class Scanner
     end
   end
 
-  def fetch_likes(post)
+  def fetch_likes(posts, batch_api)
     puts post.uid
     puts post.id
-    likes = @graph.get_connection(post.uid, 'likes?summary=true')
+    batch_api = @graph.get_connection(post.uid, 'likes?summary=true')
     puts likes.raw_response
     Like.create(amount: likes.raw_response['summary']['total_count'], video_id: post.id)
   end
