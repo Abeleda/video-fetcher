@@ -259,6 +259,7 @@ DEPENDENCIES
   devise
   jbuilder (~> 2.0)
   jquery-rails
+  json
   koala
   meta_request
   mysql2

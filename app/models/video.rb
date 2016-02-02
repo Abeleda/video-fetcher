@@ -1,5 +1,5 @@
 class Video < ActiveRecord::Base
-
+  has_many :likes
   belongs_to :channel
 
   validates :title, presence: true

@@ -26,6 +26,7 @@ gem 'sdoc', '~> 0.4.0', group: :doc
 gem 'yt', '~> 0.25.5'
 gem 'activeadmin', github: 'activeadmin'
 gem 'devise'
+gem 'json'
 
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'

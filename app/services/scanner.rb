@@ -21,12 +21,12 @@ class Scanner
       callback_url = 'http://localhost:3000/oauth'
       oauth = Koala::Facebook::OAuth.new(app_id, app_secret, callback_url)
       token = oauth.get_app_access_token
-      graph = Koala::Facebook::API.new(token)
+      @graph = Koala::Facebook::API.new(token)
       # ?id=https://www.facebook.com/nike/
-      user = graph.get_object "?id=#{@channel.url}"
+      user = @graph.get_object "?id=#{@channel.url}"
       puts user
 
-      feed = graph.get_connection(user['id'], 'feed/?fields=object_id,source,name,created_time,updated_time,id,type,properties')
+      feed = @graph.get_connection(user['id'], 'feed/?fields=object_id,source,name,created_time,updated_time,id,type,properties')
       puts feed
       filtered_feed = []
       feed.each {|f| filtered_feed << f if f['type'] && f['type'] == 'video'}
@@ -35,9 +35,10 @@ class Scanner
       # 2. Need to check if present?
       filtered_feed.each do |f|
         time = get_video_length f
-        video = @channel.videos.build(title: f['name'], url: f['source'], published: f['created_time'], modified: f['updated_time'], uid: f['id'])
+        video = Video.find_or_initialize_by(title: f['name'], url: f['source'], published: f['created_time'], modified: f['updated_time'], uid: f['id'], channel_id: @channel.id)
         video.duration = time if time
         video.save
+        fetch_likes video
       end
 
     end
@@ -55,6 +56,14 @@ class Scanner
     else
       nil
     end
+  end
+
+  def fetch_likes(post)
+    puts post.uid
+    puts post.id
+    likes = @graph.get_connection(post.uid, 'likes?summary=true')
+    puts likes.raw_response
+    Like.create(amount: likes.raw_response['summary']['total_count'], video_id: post.id)
   end
 
   def parse_time(text)
