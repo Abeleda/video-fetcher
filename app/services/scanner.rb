@@ -1,5 +1,9 @@
 class Scanner
 
+  # TO-DO:
+  # 1. Fetch comments
+  # 2. Fetch views
+  # 3. Fetch shares
   def initialize(channel)
     @channel = channel
   end
@@ -46,11 +50,6 @@ class Scanner
           batch_api.get_connection(video.uid, 'likes?summary=true')
         end
       end
-      # data.each do |likes|
-      #   puts likes.raw_response
-      #
-      #   Like.create(amount: likes.raw_response['summary']['total_count'], video_id: videos[index].id)
-      # end
       (0...data.count).each do |i|
           Like.create(amount: data[i].raw_response['summary']['total_count'], video_id: videos[i].id)
       end
@@ -71,13 +70,6 @@ class Scanner
     end
   end
 
-  def fetch_likes(posts, batch_api)
-    puts post.uid
-    puts post.id
-    batch_api = @graph.get_connection(post.uid, 'likes?summary=true')
-    puts likes.raw_response
-    Like.create(amount: likes.raw_response['summary']['total_count'], video_id: post.id)
-  end
 
   def parse_time(text)
     # Possible error - works only with format "MM:SS"
