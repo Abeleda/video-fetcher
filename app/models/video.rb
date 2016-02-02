@@ -4,6 +4,7 @@ class Video < ActiveRecord::Base
 
   validates :title, presence: true
   validates :published, presence: true
+  validates :url, presence: true, uniqueness: true
   # validates :modified, presence: true
   # validates :duration, presence: true
 
