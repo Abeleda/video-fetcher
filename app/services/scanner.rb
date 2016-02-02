@@ -29,7 +29,7 @@ class Scanner
       puts feed.count
       filtered_feed = []
       feed.each {|f| filtered_feed << f if f['source']}
-
+      # uid
       # Potential problems
       # 1. No API for duration
       # 2. Need to check if present?
