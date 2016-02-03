@@ -25,7 +25,8 @@ module Updater
               v = Video.find_by(uid: f['id'])
               if v
               else
-                v = Video.create!(title: f['name'], url: f['source'], published: f['created_time'], modified: f['updated_time'], uid: f['id'], channel_id: @channel.id, attachment: f['object_id'])
+                message = truncate(f['message'], length: 250)
+                v = Video.create!(title: message, url: f['source'], published: f['created_time'], modified: f['updated_time'], uid: f['id'], channel_id: @channel.id, attachment: f['object_id'])
               end
               videos << v
             end
