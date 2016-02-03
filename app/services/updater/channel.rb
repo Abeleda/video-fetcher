@@ -3,6 +3,7 @@ module Updater
     def initialize(channel)
       @channel = channel
     end
+
     def scan
       if @channel.youtube?
         yt = Yt::Channel.new url: @channel.url
@@ -15,11 +16,17 @@ module Updater
           # )
         end
       elsif @channel.facebook?
-        Facebook::Scanner.new(@channel).scan do |data|
+        Scanner::Facebook.new(@channel).scan do |data|
+          puts data[:videos]
           videos = []
           ActiveRecord::Base.transaction do
             data[:videos].each do |f|
-              v = Video.find_or_create_by!(title: f['name'], url: f['source'], published: f['created_time'], modified: f['updated_time'], uid: f['id'], channel_id: @channel.id, attachment: f['object_id'])
+
+              v = Video.find_by(uid: f['id'])
+              if v
+              else
+                v = Video.create!(title: f['name'], url: f['source'], published: f['created_time'], modified: f['updated_time'], uid: f['id'], channel_id: @channel.id, attachment: f['object_id'])
+              end
               videos << v
             end
           end
@@ -37,7 +44,7 @@ module Updater
           end
           ActiveRecord::Base.transaction do
             (0...data[:comments].count).each do |i|
-              metadatas[i].update_attribute(:comments, comments[i].raw_response['summary']['total_count'])
+              metadatas[i].update_attribute(:comments, data[:comments][i].raw_response['summary']['total_count'])
               video = videos[i]
               data[:comments][i].each do |comment|
                 begin
@@ -51,6 +58,5 @@ module Updater
         end
       end
     end
-
   end
 end
