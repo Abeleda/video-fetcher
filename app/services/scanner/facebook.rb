@@ -10,7 +10,7 @@ module Scanner
     end
 
     def scan
-      user = @graph.get_object "?id=#{@channel.url}"
+      @user = @graph.get_object "?id=#{@channel.url}"
       @shares = []
       output_hash = {
           videos: [],
@@ -38,7 +38,7 @@ module Scanner
     private
     def fetch_videos
       if @graph_collection.nil?
-        @graph_collection = @graph.get_connection(user['id'], 'feed/?fields=object_id,source,message,created_time,updated_time,id,type,properties,shares', limit: 50)
+        @graph_collection = @graph.get_connection(@user['id'], 'feed/?fields=object_id,source,message,created_time,updated_time,id,type,properties,shares', limit: 50)
       else
         @graph_collection = @graph_collection.next_page
       end
