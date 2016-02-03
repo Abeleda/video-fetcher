@@ -95,24 +95,4 @@ class Scanner
       end
     end
   end
-  private
-  def get_video_length(post)
-    # Possible error - works only with format "MM:SS"
-    if post['properties']
-      post['properties'].each do |property|
-        if property['name'] == 'Length'
-          return parse_time property['text']
-        end
-      end
-    else
-      nil
-    end
-  end
-  def parse_time(text)
-    # Possible error - works only with format "MM:SS"
-    arr = text.split(':')
-    minutes = arr[0].to_i
-    seconds = arr[1].to_i
-    minutes * 60 + seconds
-  end
 end
