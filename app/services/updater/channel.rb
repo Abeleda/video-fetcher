@@ -15,6 +15,8 @@ module Updater
           # )
         end
       elsif @channel.facebook?
+        # 1. Optimize hashes
+        # 2. Refactor creating
         Scanner::Facebook.new(@channel).scan do |data|
           ActiveRecord::Base.transaction do
             data[:videos].each do |f|
