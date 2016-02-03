@@ -1,5 +1,5 @@
 class Video < ActiveRecord::Base
-  has_many :likes
+  has_many :metadatas
   belongs_to :channel
   has_many :comments
   validates :published, presence: true
