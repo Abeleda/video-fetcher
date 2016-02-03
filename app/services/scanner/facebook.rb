@@ -8,7 +8,6 @@ module Scanner
       token = oauth.get_app_access_token
       @graph = Koala::Facebook::API.new(token)
     end
-
     def scan
       @user = @graph.get_object "?id=#{@channel.url}"
       @shares = []
@@ -21,44 +20,46 @@ module Scanner
           shares: []
       }
       counter = 1
-      while @graph_collection.nil? || @graph_collection != []
+      @fetching = true
+      while @graph_collection.nil? || @fetching
         puts "Fetching page number #{counter}."
         fetch_videos
         output_hash[:videos].concat @filtered_feed
-        output_hash[:metadata].concat fetch_metadata
-        output_hash[:shares].concat @shares
         output_hash[:lengths].concat fetch_length
-        output_hash[:views].concat fetch_views
-        output_hash[:comments].concat fetch_comments
         counter += 1
       end
       yield output_hash
     end
-
     private
     def fetch_videos
       if @graph_collection.nil?
-        @graph_collection = @graph.get_connection(@user['id'], 'feed/?fields=object_id,source,message,created_time,updated_time,id,type,properties,shares', limit: 50)
+        @graph_collection = @graph.get_connection(@user['id'], '?fields=feed.limit(50){object_id,source,message,created_time,updated_time,id,type,properties,shares,likes.summary(true),comments.summary(true)}')
       else
-        @graph_collection = @graph_collection.next_page
+        if @graph_collection.class == Koala::Facebook::API::GraphCollection
+          @graph_collection = @graph_collection.next_page
+        else
+          url = Koala::Facebook::API::GraphCollection.parse_page_url(@graph_collection['feed']['paging']['next'])
+          @graph_collection = @graph.get_page(url)
+        end
       end
       @filtered_feed = []
-      @graph_collection.each { |f|
-        if f['type'] && f['type'] == 'video'
-          @filtered_feed << f
-          if f['shares'] && f['shares']['count']
-            @shares << f['shares']['count']
-          else
-            @shares << 0
+      if @graph_collection.class == Koala::Facebook::API::GraphCollection
+        data = @graph_collection.raw_response['data']
+        data.each { |f|
+          if f['type'] && f['type'] == 'video'
+            @filtered_feed << f
           end
-        end
-      }
-    end
-    def fetch_metadata
-      @graph.batch do |batch_api|
-        @filtered_feed.each do |video|
-          batch_api.get_connection(video['id'], 'likes?summary=true', limit: 50)
-        end
+        }
+        @fetching = false if @graph_collection == []
+      else
+        return if @graph_collection['data'] && @graph_collection['data'] == []
+        data = @graph_collection['feed']['data']
+        data.each { |f|
+          if f['type'] && f['type'] == 'video'
+            @filtered_feed << f
+          end
+        }
+        @fetching = false if @graph_collection['data'] == []
       end
     end
     def fetch_length
@@ -72,13 +73,6 @@ module Scanner
       @graph.batch do |batch_api|
         @filtered_feed.each do |video|
           batch_api.get_connection(video['id'], '/insights/post_video_complete_views_organic')
-        end
-      end
-    end
-    def fetch_comments
-      @graph.batch do |batch_api|
-        @filtered_feed.each do |video|
-          batch_api.get_connection(video['id'], 'comments?summary=true', limit: 50)
         end
       end
     end
