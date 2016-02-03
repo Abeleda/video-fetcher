@@ -23,7 +23,6 @@ module Scanner
       }
       counter = 1
       while @graph_collection.nil? || @graph_collection != []
-        break if counter == 4
         puts "Fetching page number #{counter}."
         if @graph_collection.nil?
           @graph_collection = @graph.get_connection(user['id'], 'feed/?fields=object_id,source,message,created_time,updated_time,id,type,properties,shares')
