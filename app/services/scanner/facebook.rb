@@ -57,11 +57,10 @@ module Facebook
         end
         output_hash[:videos] << filtered_feed
         output_hash[:metadata] << likes
+        output_hash[:shares] << shares
         output_hash[:lengths] << video_infos
         output_hash[:views] << views
         output_hash[:comments] << comments
-
-
       end
       yield output_hash
     end
