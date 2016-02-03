@@ -13,11 +13,7 @@ module Scanner
       @shares = []
       output_hash = {
           videos: [],
-          metadata: [],
-          lengths: [],
-          views: [],
-          comments: [],
-          shares: []
+          lengths: []
       }
       counter = 1
       @fetching = true
@@ -66,13 +62,6 @@ module Scanner
       @graph.batch do |batch_api|
         @filtered_feed.each do |v|
           batch_api.get_object("#{v['object_id']}?fields=length") if v['object_id']
-        end
-      end
-    end
-    def fetch_views
-      @graph.batch do |batch_api|
-        @filtered_feed.each do |video|
-          batch_api.get_connection(video['id'], '/insights/post_video_complete_views_organic')
         end
       end
     end
