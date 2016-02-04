@@ -19,12 +19,10 @@ module Updater
       elsif @channel.facebook?
         Scanner::Facebook.new(@channel).scan do |data|
           ActiveRecord::Base.transaction do
-            byebug
-            (0...data[:videos].length).each do |i|
-              v = data[:videos][i]
+            data[:videos].each_with_index do |v, i|
               m = data[:metadatas][i]
               @video = Video.find_by(uid: v[:uid])
-              unless @v
+              unless @video
                 @video = Video.create! v
               end
               @video.metadatas.create! m
