@@ -16,6 +16,7 @@
 !/log/.keep
 /tmp
 .idea/
+app/services/run.rb
 
 *.sublime-project
 *.sublime-workspace
