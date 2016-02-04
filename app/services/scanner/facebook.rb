@@ -12,28 +12,26 @@ module Scanner
 
     def scan
       @user = @graph.get_object "?id=#{@channel.url}"
-      @shares = []
-      output_hash = {
-          videos: [],
-          lengths: [],
-          metadatas: []
-      }
+      @output_videos = []
+      @output_metadata = []
+      @output_comments = Hash.new
+      lengths = []
       counter = 1
       @fetching = true
       while @graph_collection.nil? || @fetching
         puts "Fetching page number #{counter}."
         fetch_videos
-        output_hash[:videos].concat @videos
-        output_hash[:metadatas].concat @metadatas
-        output_hash[:lengths].concat fetch_length
+        @output_videos.concat @videos
+        @output_metadata.concat @metadatas
+        lengths.concat fetch_length
         counter += 1
       end
-      output_hash[:lengths].each do |l|
+      lengths.each do |l|
 
-        video = output_hash[:videos].select {|v| v[:attachment] == l['id']}
+        video = @output_videos.select {|v| v[:attachment] == l['id']}
         video.each {|v| v[:duration] = l['length']}
       end
-      yield output_hash
+      yield @output_videos, @output_metadata, @output_comments
     end
 
     private
@@ -55,23 +53,7 @@ module Scanner
         data = @graph_collection.raw_response['data']
         data.each { |f|
           if f['type'] && f['type'] == 'video'
-            hash = {
-                title: truncate(f['message'], length: 140),
-                published: f['created_time'],
-                modified: f['updated_time'],
-                uid: f['id'],
-                url: f['source'],
-                channel_id: @channel.id,
-                attachment: f['object_id']
-            }
-            @videos << hash
-            shares = f['shares']['count'] if f['shares']
-            metadata = {
-                likes: f['likes']['summary']['total_count'],
-                comments: f['comments']['summary']['total_count'],
-                shares: shares
-            }
-            @metadatas << metadata
+            form_video_hash f
           end
         }
         @fetching = false if @graph_collection == []
@@ -80,23 +62,7 @@ module Scanner
         data = @graph_collection['feed']['data']
         data.each { |f|
           if f['type'] && f['type'] == 'video'
-            hash = {
-                title: truncate(f['message'], length: 140),
-                published: f['created_time'],
-                modified: f['updated_time'],
-                url: f['source'],
-                uid: f['id'],
-                channel_id: @channel.id,
-                attachment: f['object_id']
-            }
-            @videos << hash
-            shares = f['shares']['count'] if f['shares']
-            metadata = {
-                likes: f['likes']['summary']['total_count'],
-                comments: f['comments']['summary']['total_count'],
-                shares: shares
-            }
-            @metadatas << metadata
+            form_video_hash f
           end
         }
         @fetching = false if @graph_collection['data'] == []
@@ -110,6 +76,30 @@ module Scanner
         end
       end
     end
+
+    def form_video_hash(video)
+      hash = {
+          title: truncate(video['message'], length: 140),
+          published: video['created_time'],
+          modified: video['updated_time'],
+          url: video['source'],
+          uid: video['id'],
+          channel_id: @channel.id,
+          attachment: video['object_id']
+      }
+      @videos << hash
+      shares = video['shares']['count'] if video['shares']
+      metadata = {
+          likes: video['likes']['summary']['total_count'],
+          comments: video['comments']['summary']['total_count'],
+          shares: shares
+      }
+      @metadatas << metadata
+      @output_comments[video['id']] = []
+      video['comments']['data'].each { |comment| @output_comments[video['id']] << {content: comment['message']} }
+
+    end
+
 
   end
 end

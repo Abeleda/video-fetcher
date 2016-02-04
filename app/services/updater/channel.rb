@@ -17,16 +17,21 @@ module Updater
           # )
         end
       elsif @channel.facebook?
-        Scanner::Facebook.new(@channel).scan do |data|
+        Scanner::Facebook.new(@channel).scan do |videos, meta, comments|
           ActiveRecord::Base.transaction do
-            data[:videos].each_with_index do |v, i|
-              m = data[:metadatas][i]
+            videos.each_with_index do |v, i|
+              m = meta[i]
               @video = Video.find_by(uid: v[:uid])
-              unless @video
-                @video = Video.create! v
-              end
+              @video = Video.create! v unless @video
               @video.metadatas.create! m
-
+              video_comments = comments[@video.uid]
+              video_comments.each do |c|
+                begin
+                  @video.comments.find_or_create_by!(c)
+                rescue
+                  puts 'ERROR: INVALID CONTENT'
+                end
+              end
             end
           end
         end
