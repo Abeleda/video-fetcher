@@ -15,9 +15,13 @@
 /log/*
 !/log/.keep
 /tmp
+.idea/
+app/services/run.rb
 
 *.sublime-project
 *.sublime-workspace
 
 .ruby-gemset
 .ruby-version
+delete_script.rb
+.byebug_history

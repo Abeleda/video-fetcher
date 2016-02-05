@@ -14,5 +14,6 @@ ActiveAdmin.register Metadata do
     actions
   end
 
+  permit_params :video_id, :likes, :views, :dislikes, :comments, :shares, :video_id
 
 end

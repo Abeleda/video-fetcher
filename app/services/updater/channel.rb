@@ -7,18 +7,24 @@ module Updater
 
     def start
       if @channel.youtube?
-        scanner = Scanner::Youtube.new @channel
-
-        ActiveRecord::Base.transaction do
-          scanner.scan do |video_attr, metadata_attr|
+        Scanner::Youtube.new(@channel).scan do |video_attr, metadata_attr|
+          ActiveRecord::Base.transaction do
             video = find_or_create_video(video_attr)
             video.metadata.create(metadata_attr)
           end
         end
 
       elsif @channel.facebook?
-
-
+        Scanner::Facebook.new(@channel).scan do |videos, meta, comments|
+          ActiveRecord::Base.transaction do
+            videos.each_with_index do |v, i|
+              m = meta[i]
+              video = find_or_create_video(v)
+              video.metadata.create! m
+              find_or_create_comments(video, comments[video.uid])
+            end
+          end
+        end
       end
     end
 
@@ -32,5 +38,14 @@ module Updater
       end
     end
 
-  end
+    def find_or_create_comments(video, comments)
+      comments.each do |c|
+        begin
+          video.comments.find_or_create_by(c)
+        rescue
+          puts 'ERROR: INVALID CONTENT'
+        end
+      end
+    end
+
 end
