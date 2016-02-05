@@ -34,7 +34,7 @@ module Updater
       if @channel.videos.exists?(uid: video_attr[:uid])
         Video.find_by(uid: video_attr[:uid])
       else
-        @channel.videos.create(video_attr)
+        @channel.videos.create!(video_attr)
       end
     end
 
@@ -48,4 +48,5 @@ module Updater
       end
     end
 
+  end
 end
