@@ -1,6 +1,7 @@
 class Video < ActiveRecord::Base
 
   belongs_to :channel
+  has_many :metadata
 
   validates :title, presence: true
   validates :published, presence: true
