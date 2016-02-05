@@ -5,6 +5,18 @@ module Scanner
 
     def initialize(channel)
       @channel = channel
+      Koala.http_service.faraday_middleware = Proc.new do |builder|
+
+        # Add Faraday's logger (which outputs to your console)
+
+        builder.use Faraday::Response::Logger
+
+        # Add the default middleware by calling the default Proc that we just replaced
+        # SOURCE CODE: https://github.com/arsduo/koala/blob/master/lib/koala/http_service.rb#L20
+
+        Koala::HTTPService::DEFAULT_MIDDLEWARE.call(builder)
+
+      end
       oauth = Koala::Facebook::OAuth.new(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
       token = oauth.get_app_access_token
       @graph = Koala::Facebook::API.new(token)
@@ -19,6 +31,7 @@ module Scanner
       counter = 1
       @fetching = true
       while @graph_collection.nil? || @fetching
+        break if counter > 5
         puts "Fetching page number #{counter}."
         fetch_videos
         @output_videos.concat @videos
@@ -38,7 +51,7 @@ module Scanner
 
     def fetch_videos
       if @graph_collection.nil?
-        @graph_collection = @graph.get_connection(@user['id'], '?fields=feed.limit(50){object_id,source,message,created_time,updated_time,id,type,properties,shares,likes.summary(true),comments.summary(true)}')
+        @graph_collection = @graph.get_connection(@user['id'], '?fields=feed.limit(25){object_id,source,message,created_time,updated_time,id,type,properties,shares,likes.summary(true),comments.summary(true)}')
       else
         if @graph_collection.class == Koala::Facebook::API::GraphCollection
           @graph_collection = @graph_collection.next_page
