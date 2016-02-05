@@ -21,13 +21,12 @@ module Updater
           ActiveRecord::Base.transaction do
             videos.each_with_index do |v, i|
               m = meta[i]
-              @video = @channel.videos.find_by(uid: v[:uid])
-              @video = Video.create! v unless @video
-              @video.metadatas.create! m
-              video_comments = comments[@video.uid]
+              video = find_or_create_video(v)
+              video.metadatas.create! m
+              video_comments = comments[video.uid]
               video_comments.each do |c|
                 begin
-                  @video.comments.find_or_create_by(c)
+                  video.comments.find_or_create_by(c)
                 rescue
                   puts 'ERROR: INVALID CONTENT'
                 end
@@ -39,5 +38,12 @@ module Updater
       end
     end
 
+    private
+
+    def find_or_create_video(video_attr)
+      (@channel.videos.exists?(uid: video_attr[:uid])) ?
+          Video.find_by(uid: video_attr[:uid]) :
+          @channel.videos.create!(video_attr)
+    end
   end
 end

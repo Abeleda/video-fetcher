@@ -3,13 +3,14 @@ include ActionView::Helpers::TextHelper
 
 module Scanner
   class Facebook
+    NUMBER_OF_OBJECTS_IN_REQUEST = 25 # Do not set this constant to more than 50
 
     def initialize(channel)
       @channel = channel
-      Koala.http_service.faraday_middleware = Proc.new do |builder|
-        builder.use Faraday::Response::Logger
-        Koala::HTTPService::DEFAULT_MIDDLEWARE.call(builder)
-      end
+      # Koala.http_service.faraday_middleware = Proc.new do |builder|
+      #   builder.use Faraday::Response::Logger
+      #   Koala::HTTPService::DEFAULT_MIDDLEWARE.call(builder)
+      # end
       oauth = Koala::Facebook::OAuth.new(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
       token = oauth.get_app_access_token
       @graph = Koala::Facebook::API.new(token)
@@ -17,12 +18,12 @@ module Scanner
     end
 
     def scan
-      output_videos, output_metadata, output_comments, lengths = [], [], [], {}
+      output_videos, output_metadata, output_comments, lengths = [], [], {}, []
       counter = 1
       fetching = true
 
       while @graph_collection.nil? || fetching
-        # break if counter > 3
+        break if counter > 20
         puts "Fetching page number #{counter}."
         videos = []
         fetching = fetch_videos do |video, metadata, comments|
@@ -46,7 +47,7 @@ module Scanner
     def fetch_videos
       if @graph_collection.nil?
         @graph_collection = @graph.get_connection(@user['id'],
-          '?fields=feed.limit(25){object_id,source,message,created_time,updated_time,id,type,properties,shares,likes.summary(true),comments.summary(true)}')
+          "?fields=feed.limit(#{NUMBER_OF_OBJECTS_IN_REQUEST}){object_id,source,message,created_time,updated_time,id,type,properties,shares,likes.summary(true),comments.summary(true)}")
       else
         if @graph_collection.class == Koala::Facebook::API::GraphCollection
           @graph_collection = @graph_collection.next_page
