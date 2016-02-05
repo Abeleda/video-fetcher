@@ -1,5 +1,6 @@
 require 'action_view/helpers/text_helper'
 include ActionView::Helpers::TextHelper
+
 module Scanner
   class Facebook
 
@@ -12,16 +13,14 @@ module Scanner
       oauth = Koala::Facebook::OAuth.new(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
       token = oauth.get_app_access_token
       @graph = Koala::Facebook::API.new(token)
+      @user = @graph.get_object "?id=#{@channel.url}"
     end
 
     def scan
-      @user = @graph.get_object "?id=#{@channel.url}"
-      output_videos = []
-      output_metadata = []
-      output_comments = Hash.new
-      lengths = []
+      output_videos, output_metadata, output_comments, lengths = [], [], [], {}
       counter = 1
       fetching = true
+
       while @graph_collection.nil? || fetching
         # break if counter > 3
         puts "Fetching page number #{counter}."
@@ -31,7 +30,7 @@ module Scanner
           output_metadata << metadata
           output_comments[video[:uid]] = comments
         end
-        lengths.concat fetch_length videos
+        lengths.concat fetch_length(videos)
         output_videos.concat videos
         counter += 1
       end
@@ -46,7 +45,8 @@ module Scanner
 
     def fetch_videos
       if @graph_collection.nil?
-        @graph_collection = @graph.get_connection(@user['id'], '?fields=feed.limit(25){object_id,source,message,created_time,updated_time,id,type,properties,shares,likes.summary(true),comments.summary(true)}')
+        @graph_collection = @graph.get_connection(@user['id'],
+          '?fields=feed.limit(25){object_id,source,message,created_time,updated_time,id,type,properties,shares,likes.summary(true),comments.summary(true)}')
       else
         if @graph_collection.class == Koala::Facebook::API::GraphCollection
           @graph_collection = @graph_collection.next_page
@@ -55,17 +55,22 @@ module Scanner
           @graph_collection = @graph.get_page(url)
         end
       end
-      data = (@graph_collection.class == Koala::Facebook::API::GraphCollection) ? @graph_collection.raw_response['data'] : @graph_collection['feed']['data']
+
+      data = (@graph_collection.class == Koala::Facebook::API::GraphCollection) ? \
+        @graph_collection.raw_response['data'] : @graph_collection['feed']['data']
+
       return false if data == []
+
       data.each do |v|
         if v['type'] == 'video'
           video = get_video_hash(v)
           metadata = get_metadata_hash(v)
-          comments = get_video_comments v
+          comments = get_video_comments(v)
           yield video, metadata, comments
         end
       end
-      true
+
+      return true
     end
 
     def fetch_length(videos)
@@ -76,20 +81,20 @@ module Scanner
 
     def get_video_hash(video)
       {
-          title: truncate(video['message'], length: 140),
-          published: video['created_time'],
-          modified: video['updated_time'],
-          url: video['source'],
-          uid: video['id'],
-          channel_id: @channel.id,
-          attachment: video['object_id']
+        title: truncate(video['message'], length: 140),
+        published: video['created_time'],
+        modified: video['updated_time'],
+        url: video['source'],
+        uid: video['id'],
+        # channel_id: @channel.id,
+        attachment: video['object_id']
       }
     end
 
     def get_metadata_hash(video)
       metadata = {
-          likes: video['likes']['summary']['total_count'],
-          comments: video['comments']['summary']['total_count']
+        likes: video['likes']['summary']['total_count'],
+        comments: video['comments']['summary']['total_count']
       }
       metadata[:shares] = video['shares']['count'] if video['shares']
       metadata
