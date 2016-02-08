@@ -5,13 +5,13 @@ module Scanner
   class Facebook
     NUMBER_OF_OBJECTS_IN_REQUEST = 25 # Do not set this constant to more than 50
 
-    def initialize(channel)
+    def initialize(channel, app_id, app_secret)
       @channel = channel
       # Koala.http_service.faraday_middleware = Proc.new do |builder|
       #   builder.use Faraday::Response::Logger
       #   Koala::HTTPService::DEFAULT_MIDDLEWARE.call(builder)
       # end
-      oauth = Koala::Facebook::OAuth.new(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
+      oauth = Koala::Facebook::OAuth.new(app_id, app_secret)
       token = oauth.get_app_access_token
       @graph = Koala::Facebook::API.new(token)
       @user = @graph.get_object "?id=#{@channel.url}"
@@ -23,7 +23,7 @@ module Scanner
       fetching = true
 
       while @graph_collection.nil? || fetching
-        break if counter > 20
+        break if counter > 10
         puts "Fetching page number #{counter}."
         videos = []
         fetching = fetch_videos do |video, metadata, comments|

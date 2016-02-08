@@ -1,8 +1,10 @@
 module Updater
   class Channel
 
-    def initialize(channel)
+    def initialize(channel, app_id, app_secret)
       @channel = channel
+      @app_id = app_id
+      @app_secret = app_secret
     end
 
     def start
@@ -15,7 +17,7 @@ module Updater
         end
 
       elsif @channel.facebook?
-        Scanner::Facebook.new(@channel).scan do |videos, meta, comments|
+        Scanner::Facebook.new(@channel, @app_id, @app_secret).scan do |videos, meta, comments|
           ActiveRecord::Base.transaction do
             videos.each_with_index do |v, i|
               m = meta[i]
