@@ -1,9 +1,13 @@
 require 'action_view/helpers/text_helper'
 include ActionView::Helpers::TextHelper
 
+# TO-DO:
+# Save app access token to database
+
 module Scanner
   class Facebook
     NUMBER_OF_OBJECTS_IN_REQUEST = 25 # Do not set this constant to more than 50
+    BREAK_AFTER = 200
 
     def initialize(channel, app_id, app_secret)
       @channel = channel
@@ -21,11 +25,12 @@ module Scanner
       output_videos, output_metadata, output_comments, lengths = [], [], {}, []
       counter = 1
       fetching = true
-
+      times = []
       while @graph_collection.nil? || fetching
-        break if counter > 10
+        break if counter > BREAK_AFTER
         puts "Fetching page number #{counter}."
         videos = []
+        before = Time.now
         fetching = fetch_videos do |video, metadata, comments|
           videos << video
           output_metadata << metadata
@@ -34,12 +39,16 @@ module Scanner
         lengths.concat fetch_length(videos)
         output_videos.concat videos
         counter += 1
+        times << Time.now - before
       end
       lengths.each do |l|
         video = output_videos.select {|v| v[:attachment] == l['id']}
         video.each {|v| v[:duration] = l['length']}
       end
+
+
       yield output_videos, output_metadata, output_comments
+      print_statistics times
     end
 
     private
@@ -105,6 +114,13 @@ module Scanner
       comments = []
       video['comments']['data'].each { |comment| comments << {content: comment['message']} }
       comments
+    end
+
+    def print_statistics(data)
+      sum = 0
+      data.each {|t| sum += t}
+      average = sum / data.count
+      puts "\nStatistics:\n\nMin: #{data.min} seconds.\nAverage: #{average} seconds.\nMax: #{data.max}."
     end
   end
 
