@@ -20,12 +20,14 @@ module Updater
         Scanner::Facebook.new(@channel, @app_id, @app_secret).scan do |videos, meta, comments, times|
           ActiveRecord::Base.transaction do
             videos.each_with_index do |v, i|
+
               m = meta[i]
               video = find_or_create_video(v)
               video.metadata.create! m
               find_or_create_comments(video, comments[video.uid])
             end
           end
+
           yield times
         end
       end

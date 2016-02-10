@@ -26,36 +26,28 @@ module Scanner
     end
 
     def scan
-      output_videos, output_metadata, output_comments, lengths = [], [], {}, []
       counter = 1
       fetching = true
       times = []
       while @graph_collection.nil? || fetching
         break if counter > BREAK_AFTER
         sleep SLEEP_TIME if counter % SLEEP_INTERVAL == 0
+        videos, metadata, comments = [], [], {}
+
         puts "Fetching page number #{counter}."
-        videos = []
         before = Time.now
-        fetching = fetch_videos do |video, metadata, comments|
-          videos << video
-          output_metadata << metadata
-          output_comments[video[:uid]] = comments
+        fetching = fetch_videos do |v, m, c|
+          videos << v
+          metadata << m
+          comments[v[:uid]] = c
+
         end
-        # before_fetching_lengths = Time.now
-        # lengths.concat fetch_length(videos)
-        # puts "Fetching videos' lengths: #{Time.now - before_fetching_lengths} seconds."
-        output_videos.concat videos
         counter += 1
         times << Time.now - before
+        yield videos, metadata, comments
       end
-      # lengths.each do |l|
-      #   video = output_videos.select {|v| v[:attachment] == l['id']}
-      #   video.each {|v| v[:duration] = l['length']}
-      # end
 
 
-      yield output_videos, output_metadata, output_comments, times
-      # print_stats get_stats times
     end
 
     private
@@ -98,11 +90,6 @@ module Scanner
       return true
     end
 
-    def fetch_length(videos)
-      @graph.batch do |batch_api|
-        videos.each { |v| batch_api.get_object("#{v[:attachment]}?fields=length") if v[:attachment] }
-      end
-    end
 
     def get_video_hash(video)
 
