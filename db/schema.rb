@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160203085847) do
+ActiveRecord::Schema.define(version: 20160210122359) do
 
   create_table "active_admin_comments", force: :cascade do |t|
     t.string   "namespace",     limit: 255
@@ -89,11 +89,11 @@ ActiveRecord::Schema.define(version: 20160203085847) do
     t.datetime "published"
     t.datetime "modified"
     t.integer  "duration",   limit: 4
-    t.datetime "created_at",             null: false
-    t.datetime "updated_at",             null: false
-    t.string   "url",        limit: 255
+    t.datetime "created_at",               null: false
+    t.datetime "updated_at",               null: false
     t.string   "uid",        limit: 255
     t.string   "attachment", limit: 255
+    t.text     "url",        limit: 65535
   end
 
   add_index "videos", ["attachment"], name: "index_videos_on_attachment", using: :btree

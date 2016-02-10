@@ -17,7 +17,7 @@ module Updater
         end
 
       elsif @channel.facebook?
-        Scanner::Facebook.new(@channel, @app_id, @app_secret).scan do |videos, meta, comments|
+        Scanner::Facebook.new(@channel, @app_id, @app_secret).scan do |videos, meta, comments, times|
           ActiveRecord::Base.transaction do
             videos.each_with_index do |v, i|
               m = meta[i]
@@ -26,6 +26,7 @@ module Updater
               find_or_create_comments(video, comments[video.uid])
             end
           end
+          yield times
         end
       end
     end
@@ -36,7 +37,12 @@ module Updater
       if @channel.videos.exists?(uid: video_attr[:uid])
         Video.find_by(uid: video_attr[:uid])
       else
-        @channel.videos.create!(video_attr)
+        begin
+          @channel.videos.create!(video_attr)
+        rescue
+          video_attr[:title] = 'Unprocessable title.'
+          @channel.videos.create!(video_attr)
+        end
       end
     end
 
@@ -45,7 +51,7 @@ module Updater
         begin
           video.comments.find_or_create_by(c)
         rescue
-          puts 'ERROR: INVALID CONTENT'
+          # puts 'ERROR: INVALID CONTENT'
         end
       end
     end
