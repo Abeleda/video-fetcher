@@ -28,7 +28,6 @@ module Scanner
     def scan
       counter = 1
       fetching = true
-      times = []
       while @graph_collection.nil? || fetching
         break if counter > BREAK_AFTER
         sleep SLEEP_TIME if counter % SLEEP_INTERVAL == 0
@@ -43,11 +42,9 @@ module Scanner
 
         end
         counter += 1
-        times << Time.now - before
-        yield videos, metadata, comments
+        time = Time.now - before
+        yield videos, metadata, comments, time
       end
-
-
     end
 
     private
