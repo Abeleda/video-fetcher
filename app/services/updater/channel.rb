@@ -6,6 +6,7 @@ module Updater
       @channel = channel
       @app_id = app_id
       @app_secret = app_secret
+      ActiveRecord::Base.logger = nil
     end
 
     def start
@@ -21,7 +22,6 @@ module Updater
         Scanner::Facebook.new(@channel, @app_id, @app_secret).scan do |videos, meta, comments, times|
           Service::PrintJSON.print_json videos, 'videos'
           Service::PrintJSON.print_json meta, 'meta'
-
           ActiveRecord::Base.transaction do
             videos.each_with_index do |v, i|
               m = meta[i]
@@ -30,7 +30,6 @@ module Updater
               find_or_create_comments(video, comments[video.uid])
             end
           end
-
           yield times if block_given?
         end
       end
@@ -39,6 +38,7 @@ module Updater
   private
 
     def find_or_create_video(video_attr)
+      puts "Video published at #{video_attr[:published]}"
       if @channel.videos.exists?(uid: video_attr[:uid])
         Video.find_by(uid: video_attr[:uid])
       else

@@ -9,8 +9,9 @@ module Scanner
     NUMBER_OF_OBJECTS_IN_REQUEST = 25 # Do not set this constant to more than 100
     BREAK_AFTER = 999999
     SLEEP_TIME = 1
+    BIG_BREAK = 10
+    BIG_INTERVAL = 50
     SLEEP_INTERVAL = 5
-
 
     def initialize(channel, app_id, app_secret)
       @channel = channel
@@ -30,15 +31,17 @@ module Scanner
       while @graph_collection.nil? || fetching
         break if counter > BREAK_AFTER
         sleep SLEEP_TIME if counter % SLEEP_INTERVAL == 0
+        if counter % BIG_INTERVAL == 0
+          puts 'BIG BREAK'
+          sleep BIG_BREAK
+        end
         videos, metadata, comments = [], [], {}
-
         puts "Fetching page number #{counter}."
         before = Time.now
         fetching = fetch_videos do |v, m, c|
           videos << v
           metadata << m
           comments[v[:uid]] = c
-
         end
         counter += 1
         time = Time.now - before
@@ -80,13 +83,11 @@ module Scanner
           yield video, metadata, comments
         end
       end
-
       return true
     end
 
 
     def get_video_hash(video)
-
       {
         title: truncate(video['message'], length: 140),
         published: video['created_time'],
@@ -113,30 +114,23 @@ module Scanner
     def parse_video_duration(string)
       values = string.split(':')
       if values.length == 1
-
         values[0].to_i
-
       elsif values.length == 2
 
         minutes = values[0].to_i
         seconds = values[1].to_i
         minutes * 60 + seconds
-
       elsif values.length == 3
-
         hours = values[0].to_i
         minutes = values[1].to_i
         seconds = values[2].to_i
         hours * 60 * 60 + minutes * 60 + seconds
-
       else
-
         days = values[0].to_i
         hours = values[1].to_i
         minutes = values[2].to_i
         seconds = values[3].to_i
         days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds
-
       end
     end
 
