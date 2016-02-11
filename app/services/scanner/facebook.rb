@@ -7,7 +7,7 @@ include ActionView::Helpers::TextHelper
 module Scanner
   class Facebook
     NUMBER_OF_OBJECTS_IN_REQUEST = 25 # Do not set this constant to more than 100
-    BREAK_AFTER = 999999
+    BREAK_AFTER = 100
     SLEEP_TIME = 1
     BIG_BREAK = 10
     BIG_INTERVAL = 50
@@ -24,6 +24,12 @@ module Scanner
       @graph = Koala::Facebook::API.new(token)
       @user = @graph.get_object "?id=#{@channel.url}"
     end
+    
+    
+    
+    
+    
+    
 
     def scan
       counter = 1
@@ -48,10 +54,20 @@ module Scanner
         yield videos, metadata, comments, time
       end
     end
+    
+    
+    
+    
+    
+    
 
     private
 
     def fetch_videos
+      
+      
+      
+      
       begin
         before = Time.now
         if @graph_collection.nil?
@@ -85,8 +101,6 @@ module Scanner
       end
       return true
     end
-
-
     def get_video_hash(video)
       {
         title: truncate(video['message'], length: 140),
