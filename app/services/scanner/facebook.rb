@@ -7,7 +7,7 @@ include ActionView::Helpers::TextHelper
 module Scanner
   class Facebook
     NUMBER_OF_OBJECTS_IN_REQUEST = 25 # Do not set this constant to more than 100
-    BREAK_AFTER = 20
+    BREAK_AFTER = 999999
     SLEEP_TIME = 1
     SLEEP_INTERVAL = 5
 
@@ -18,7 +18,6 @@ module Scanner
       #   builder.use Faraday::Response::Logger
       #   Koala::HTTPService::DEFAULT_MIDDLEWARE.call(builder)
       # end
-
       oauth = Koala::Facebook::OAuth.new(app_id, app_secret)
       token = oauth.get_app_access_token
       @graph = Koala::Facebook::API.new(token)
@@ -69,12 +68,10 @@ module Scanner
         puts exception.backtrace
         raise exception
       end
-
       data = (@graph_collection.class == Koala::Facebook::API::GraphCollection) ? \
         @graph_collection.raw_response['data'] : @graph_collection['feed']['data']
-
       return false if data == []
-
+      Service::PrintJSON.print_json data, 'facebook'
       data.each do |v|
         if v['type'] == 'video'
           video = get_video_hash(v)
@@ -116,22 +113,30 @@ module Scanner
     def parse_video_duration(string)
       values = string.split(':')
       if values.length == 1
+
         values[0].to_i
+
       elsif values.length == 2
+
         minutes = values[0].to_i
         seconds = values[1].to_i
         minutes * 60 + seconds
+
       elsif values.length == 3
+
         hours = values[0].to_i
         minutes = values[1].to_i
         seconds = values[2].to_i
         hours * 60 * 60 + minutes * 60 + seconds
+
       else
+
         days = values[0].to_i
         hours = values[1].to_i
         minutes = values[2].to_i
         seconds = values[3].to_i
         days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds
+
       end
     end
 
@@ -165,6 +170,7 @@ module Scanner
         max: data.max
       }
     end
+
   end
 
 end

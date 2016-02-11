@@ -1,5 +1,6 @@
 module Updater
   class Channel
+    include Service
 
     def initialize(channel, app_id, app_secret)
       @channel = channel
@@ -18,9 +19,11 @@ module Updater
 
       elsif @channel.facebook?
         Scanner::Facebook.new(@channel, @app_id, @app_secret).scan do |videos, meta, comments, times|
+          Service::PrintJSON.print_json videos, 'videos'
+          Service::PrintJSON.print_json meta, 'meta'
+
           ActiveRecord::Base.transaction do
             videos.each_with_index do |v, i|
-
               m = meta[i]
               video = find_or_create_video(v)
               video.metadata.create! m
@@ -28,7 +31,7 @@ module Updater
             end
           end
 
-          yield times
+          yield times if block_given?
         end
       end
     end

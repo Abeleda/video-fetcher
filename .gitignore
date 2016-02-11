@@ -17,7 +17,9 @@
 /tmp
 .idea/
 app/services/run.rb
-
+app/services/videos.json
+app/services/meta.json
+app/services/facebook.json
 *.sublime-project
 *.sublime-workspace
 
