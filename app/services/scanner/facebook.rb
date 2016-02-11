@@ -24,12 +24,6 @@ module Scanner
       @graph = Koala::Facebook::API.new(token)
       @user = @graph.get_object "?id=#{@channel.url}"
     end
-    
-    
-    
-    
-    
-    
 
     def scan
       counter = 1
@@ -54,20 +48,10 @@ module Scanner
         yield videos, metadata, comments, time
       end
     end
-    
-    
-    
-    
-    
-    
 
     private
 
     def fetch_videos
-      
-      
-      
-      
       begin
         before = Time.now
         if @graph_collection.nil?

@@ -1,4 +1,4 @@
-ActiveAdmin.register Comment, as: 'FacebookComment' do
+ActiveAdmin.register Comment, as: 'VideoComment' do
 
 # See permitted parameters documentation:
 # https://github.com/activeadmin/activeadmin/blob/master/docs/2-resource-customization.md#setting-up-strong-parameters
@@ -14,6 +14,18 @@ ActiveAdmin.register Comment, as: 'FacebookComment' do
 # end
   menu priority: 5
   permit_params :video_id, :content
+
+  index do
+    column :id
+    column :video_id do |comment|
+      link_to comment.video.id, admin_video_path(comment.video)
+    end
+    column :content
+    actions
+  end
+  filter :video
+
+  actions :all, except: [:create, :new]
 
 
 end
