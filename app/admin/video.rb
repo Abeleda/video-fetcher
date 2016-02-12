@@ -8,7 +8,7 @@ ActiveAdmin.register Video do
 
   index do
     column :channel_id do |video|
-      link_to video.channel.name, admin_channel_path(video.channel), target: '_blank'
+      link_to video.channel.name, admin_channel_path(video.channel)
     end
     column :title
     column :type do |video|
@@ -16,7 +16,7 @@ ActiveAdmin.register Video do
     end
     column :duration
     column :url do |video|
-      link_to video.url, video.url
+      link_to video.url, video.url, target: '_blank'
     end
     column :published
     column do |video|

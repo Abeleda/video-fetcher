@@ -37,6 +37,16 @@ module Updater
 
           yield times if block_given?
         end
+      elsif @channel.vimeo?
+        Scanner::Vimeo.new(@channel).scan do |videos, metadata|
+          ActiveRecord::Base.transaction do
+            videos.each_with_index do |v, i|
+              m = metadata[i]
+              video = find_or_create_video v
+              video.metadata.create! m
+            end
+          end
+        end
       end
     end
 
