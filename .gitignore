@@ -15,9 +15,16 @@
 /log/*
 !/log/.keep
 /tmp
-
+.idea/
+app/services/run.rb
+app/services/videos.json
+app/services/meta.json
+app/services/facebook.json
+app/services/vimeo.json
 *.sublime-project
 *.sublime-workspace
 
 .ruby-gemset
 .ruby-version
+delete_script.rb
+.byebug_history

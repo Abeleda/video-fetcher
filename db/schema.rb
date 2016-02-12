@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160129161923) do
+ActiveRecord::Schema.define(version: 20160212111855) do
 
   create_table "active_admin_comments", force: :cascade do |t|
     t.string   "namespace",     limit: 255
@@ -56,12 +56,32 @@ ActiveRecord::Schema.define(version: 20160129161923) do
     t.datetime "updated_at",             null: false
   end
 
+  create_table "comments", force: :cascade do |t|
+    t.integer  "video_id",   limit: 4
+    t.text     "content",    limit: 65535
+    t.datetime "created_at",               null: false
+    t.datetime "updated_at",               null: false
+    t.string   "uid",        limit: 255
+  end
+
+  create_table "metadata", force: :cascade do |t|
+    t.integer  "video_id",   limit: 4
+    t.integer  "likes",      limit: 4
+    t.datetime "created_at",           null: false
+    t.datetime "updated_at",           null: false
+    t.integer  "views",      limit: 4
+    t.integer  "dislikes",   limit: 4
+    t.integer  "comments",   limit: 4
+    t.integer  "shares",     limit: 4
+  end
+
   create_table "partners", force: :cascade do |t|
     t.string   "name",       limit: 255
     t.string   "login",      limit: 255
     t.string   "password",   limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.boolean  "active"
   end
 
   create_table "videos", force: :cascade do |t|
@@ -70,8 +90,13 @@ ActiveRecord::Schema.define(version: 20160129161923) do
     t.datetime "published"
     t.datetime "modified"
     t.integer  "duration",   limit: 4
-    t.datetime "created_at",             null: false
-    t.datetime "updated_at",             null: false
+    t.datetime "created_at",               null: false
+    t.datetime "updated_at",               null: false
+    t.string   "uid",        limit: 255
+    t.string   "attachment", limit: 255
+    t.text     "url",        limit: 65535
   end
+
+  add_index "videos", ["attachment"], name: "index_videos_on_attachment", using: :btree
 
 end

@@ -1,0 +1,7 @@
+FACEBOOK_APP_ID = '206850539666337'
+FACEBOOK_APP_SECRET = '2d56fac698a6eafc3956d26731ea3f2c'
+FACEBOOK_APPS = [
+  {app_id: '206850539666337', app_secret: '2d56fac698a6eafc3956d26731ea3f2c'},
+  {app_id: '1035551179839390', app_secret: '99ac1cd2a2132455a4354c79f3e7cf73'},
+  {app_id: '437873963084197', app_secret: '2b6380ff662d560f5f6d0cb5946d08b6'}
+]
