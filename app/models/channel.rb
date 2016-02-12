@@ -1,7 +1,7 @@
 class Channel < ActiveRecord::Base
 
   belongs_to :partner
-  has_many :videos
+  has_many :videos, dependent: :destroy
 
   enum platform: [:youtube, :facebook]
 

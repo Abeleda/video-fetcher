@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20160210122359) do
+ActiveRecord::Schema.define(version: 20160212111855) do
 
   create_table "active_admin_comments", force: :cascade do |t|
     t.string   "namespace",     limit: 255
@@ -81,6 +81,7 @@ ActiveRecord::Schema.define(version: 20160210122359) do
     t.string   "password",   limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.boolean  "active"
   end
 
   create_table "videos", force: :cascade do |t|

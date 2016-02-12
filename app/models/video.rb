@@ -1,8 +1,8 @@
 class Video < ActiveRecord::Base
   before_validation :set_default_values
   belongs_to :channel
-  has_many :metadata
-  has_many :comments
+  has_many :metadata, dependent: :destroy
+  has_many :comments, dependent: :destroy
 
   validates :title, presence: true
   validates :published, presence: true

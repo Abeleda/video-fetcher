@@ -54,6 +54,7 @@ module Scanner
     def fetch_videos
       begin
         before = Time.now
+
         if @graph_collection.nil?
           @graph_collection = @graph.get_connection(@user['id'],
             "?fields=feed.limit(#{NUMBER_OF_OBJECTS_IN_REQUEST}){object_id,source,message,created_time,updated_time,id,type,properties,shares,likes.summary(true).limit(0),comments.summary(true).limit(10)}")
@@ -65,16 +66,19 @@ module Scanner
             @graph_collection = @graph.get_page(url)
           end
         end
+
         puts "Fetch videos request: #{Time.now - before} seconds."
       rescue => exception
         puts exception
         puts exception.backtrace
         raise exception
       end
+
       data = (@graph_collection.class == Koala::Facebook::API::GraphCollection) ? \
         @graph_collection.raw_response['data'] : @graph_collection['feed']['data']
       return false if data == []
-      Service::PrintJSON.print_json data, 'facebook'
+      Service::PrintJSON.save_json_to_file data, 'facebook' if DEBUG
+
       data.each do |v|
         if v['type'] == 'video'
           video = get_video_hash(v)
@@ -83,8 +87,10 @@ module Scanner
           yield video, metadata, comments
         end
       end
+
       return true
     end
+
     def get_video_hash(video)
       {
         title: truncate(video['message'], length: 140),

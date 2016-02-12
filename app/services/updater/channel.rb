@@ -20,8 +20,12 @@ module Updater
 
       elsif @channel.facebook?
         Scanner::Facebook.new(@channel, @app_id, @app_secret).scan do |videos, meta, comments, times|
-          Service::PrintJSON.print_json videos, 'videos'
-          Service::PrintJSON.print_json meta, 'meta'
+
+          if DEBUG
+            Service::PrintJSON.save_json_to_file videos, 'videos'
+            Service::PrintJSON.save_json_to_file meta, 'meta'
+          end
+
           ActiveRecord::Base.transaction do
             videos.each_with_index do |v, i|
               m = meta[i]
@@ -30,6 +34,7 @@ module Updater
               find_or_create_comments(video, comments[video.uid])
             end
           end
+
           yield times if block_given?
         end
       end

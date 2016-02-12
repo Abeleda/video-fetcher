@@ -10,8 +10,6 @@ class FetchManager
       index_of_client = index % @clients.length
       @clients[index_of_client].add_channel channel
     end
-
-
   end
 
   def scan
