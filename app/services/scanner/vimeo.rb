@@ -37,7 +37,6 @@ module Scanner
         modified: video['modified_time'],
         url: video['link'],
         uid: video['link'],
-        attachment: video['link'],
         duration: video['duration']
       }
     end
