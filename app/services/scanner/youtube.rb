@@ -6,6 +6,7 @@ module Scanner
 
     def scan
       channel = Yt::Channel.new url: @channel.url
+      Yt.configure { |config| config.debug }
       # channel = Yt::Channel.new id: 'UCxO1tY8h1AhOz0T4ENwmpow'
 
       video_ids = channel.videos.map(&:id)

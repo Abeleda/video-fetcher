@@ -1,8 +1,12 @@
 module Updater
   class Channel
+    include PrintJSON
 
-    def initialize(channel)
+    def initialize(channel, app_id, app_secret)
       @channel = channel
+      @app_id = app_id
+      @app_secret = app_secret
+      ActiveRecord::Base.logger = nil
     end
 
     def start
@@ -15,13 +19,31 @@ module Updater
         end
 
       elsif @channel.facebook?
-        Scanner::Facebook.new(@channel).scan do |videos, meta, comments|
+        Scanner::Facebook.new(@channel, @app_id, @app_secret).scan do |videos, meta, comments, times|
+
+          if DEBUG
+            save_json_to_file videos, 'videos'
+            save_json_to_file meta, 'meta'
+          end
+
           ActiveRecord::Base.transaction do
             videos.each_with_index do |v, i|
               m = meta[i]
               video = find_or_create_video(v)
               video.metadata.create! m
               find_or_create_comments(video, comments[video.uid])
+            end
+          end
+
+          yield times if block_given?
+        end
+      elsif @channel.vimeo?
+        Scanner::Vimeo.new(@channel).scan do |videos, metadata|
+          ActiveRecord::Base.transaction do
+            videos.each_with_index do |v, i|
+              m = metadata[i]
+              video = find_or_create_video v
+              video.metadata.create! m
             end
           end
         end
@@ -31,10 +53,16 @@ module Updater
   private
 
     def find_or_create_video(video_attr)
+      puts "Video published at #{video_attr[:published]}"
       if @channel.videos.exists?(uid: video_attr[:uid])
         Video.find_by(uid: video_attr[:uid])
       else
-        @channel.videos.create!(video_attr)
+        begin
+          @channel.videos.create!(video_attr)
+        rescue
+          video_attr[:title] = 'Unprocessable title.'
+          @channel.videos.create!(video_attr)
+        end
       end
     end
 
@@ -43,7 +71,7 @@ module Updater
         begin
           video.comments.find_or_create_by(c)
         rescue
-          puts 'ERROR: INVALID CONTENT'
+          # puts 'ERROR: INVALID CONTENT'
         end
       end
     end

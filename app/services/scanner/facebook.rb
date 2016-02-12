@@ -1,67 +1,62 @@
 require 'action_view/helpers/text_helper'
 include ActionView::Helpers::TextHelper
 
+# TO-DO:
+# Save app access token to database
+
 module Scanner
   class Facebook
-    NUMBER_OF_OBJECTS_IN_REQUEST = 25 # Do not set this constant to more than 50
+    include PrintJSON
+    NUMBER_OF_OBJECTS_IN_REQUEST = 25 # Do not set this constant to more than 100
+    BREAK_AFTER = 100
+    SLEEP_TIME = 1
+    BIG_BREAK = 10
+    BIG_INTERVAL = 50
+    SLEEP_INTERVAL = 5
 
-    def initialize(channel)
+    def initialize(channel, app_id, app_secret)
       @channel = channel
-      # Koala.http_service.faraday_middleware = Proc.new do |builder|
-      #   builder.use Faraday::Response::Logger
-      #   Koala::HTTPService::DEFAULT_MIDDLEWARE.call(builder)
-      # end
-      oauth = Koala::Facebook::OAuth.new(FACEBOOK_APP_ID, FACEBOOK_APP_SECRET)
+      if DEBUG
+        Koala.http_service.faraday_middleware = Proc.new do |builder|
+          builder.use Faraday::Response::Logger
+          Koala::HTTPService::DEFAULT_MIDDLEWARE.call(builder)
+        end
+      end
+      oauth = Koala::Facebook::OAuth.new(app_id, app_secret)
       token = oauth.get_app_access_token
       @graph = Koala::Facebook::API.new(token)
       @user = @graph.get_object "?id=#{@channel.url}"
     end
 
     def scan
-      output_videos, output_metadata, output_comments, lengths = [], [], {}, []
       counter = 1
       fetching = true
-
       while @graph_collection.nil? || fetching
-        break if counter > 20
-        puts "Fetching page number #{counter}."
-        videos = []
-        fetching = fetch_videos do |video, metadata, comments|
-          videos << video
-          output_metadata << metadata
-          output_comments[video[:uid]] = comments
+        break if counter > BREAK_AFTER
+        sleep SLEEP_TIME if counter % SLEEP_INTERVAL == 0
+        if counter % BIG_INTERVAL == 0
+          puts 'BIG BREAK'
+          sleep BIG_BREAK
         end
-        lengths.concat fetch_length(videos)
-        output_videos.concat videos
+        videos, metadata, comments = [], [], {}
+        puts "Fetching page number #{counter}."
+        before = Time.now
+        fetching = fetch_videos do |v, m, c|
+          videos << v
+          metadata << m
+          comments[v[:uid]] = c
+        end
         counter += 1
+        time = Time.now - before
+        yield videos, metadata, comments, time
       end
-      lengths.each do |l|
-        video = output_videos.select {|v| v[:attachment] == l['id']}
-        video.each {|v| v[:duration] = l['length']}
-      end
-      yield output_videos, output_metadata, output_comments
     end
 
     private
 
     def fetch_videos
-      if @graph_collection.nil?
-        @graph_collection = @graph.get_connection(@user['id'],
-          "?fields=feed.limit(#{NUMBER_OF_OBJECTS_IN_REQUEST}){object_id,source,message,created_time,updated_time,id,type,properties,shares,likes.summary(true),comments.summary(true)}")
-      else
-        if @graph_collection.class == Koala::Facebook::API::GraphCollection
-          @graph_collection = @graph_collection.next_page
-        else
-          url = Koala::Facebook::API::GraphCollection.parse_page_url(@graph_collection['feed']['paging']['next'])
-          @graph_collection = @graph.get_page(url)
-        end
-      end
-
-      data = (@graph_collection.class == Koala::Facebook::API::GraphCollection) ? \
-        @graph_collection.raw_response['data'] : @graph_collection['feed']['data']
-
-      return false if data == []
-
+      data = get_data_from_facebook
+      return false unless data
       data.each do |v|
         if v['type'] == 'video'
           video = get_video_hash(v)
@@ -74,10 +69,34 @@ module Scanner
       return true
     end
 
-    def fetch_length(videos)
-      @graph.batch do |batch_api|
-        videos.each { |v| batch_api.get_object("#{v[:attachment]}?fields=length") if v[:attachment] }
+    def get_data_from_facebook
+      begin
+        before = Time.now
+        if @graph_collection.nil?
+          @graph_collection = @graph.get_connection(@user['id'], "?fields=feed.limit(#{NUMBER_OF_OBJECTS_IN_REQUEST})
+                                                                  {object_id,source,message,created_time,updated_time,
+                                                                  id,type,properties,shares,likes.summary(true).limit(0),
+                                                                  comments.summary(true).limit(10)}")
+        else
+          if @graph_collection.class == Koala::Facebook::API::GraphCollection
+            @graph_collection = @graph_collection.next_page
+          else
+            url = Koala::Facebook::API::GraphCollection.parse_page_url(@graph_collection['feed']['paging']['next'])
+            @graph_collection = @graph.get_page(url)
+          end
+        end
+
+        puts "Fetch videos request: #{Time.now - before} seconds."
+      rescue => exception
+        puts exception
+        puts exception.backtrace
+        raise exception
       end
+      return nil if @graph_collection == []
+      data = (@graph_collection.class == Koala::Facebook::API::GraphCollection) ? \
+        @graph_collection.raw_response['data'] : @graph_collection['feed']['data']
+      save_json_to_file data, 'facebook' if DEBUG
+      return data
     end
 
     def get_video_hash(video)
@@ -88,8 +107,43 @@ module Scanner
         url: video['source'],
         uid: video['id'],
         # channel_id: @channel.id,
-        attachment: video['object_id']
+        attachment: video['object_id'],
+        duration: get_duration(video)
       }
+    end
+
+    def get_duration(video)
+      if video['properties']
+        video['properties'].each do |property|
+          if property['name'] == 'Length'
+            return parse_video_duration property['text']
+          end
+        end
+      end
+      return nil
+    end
+
+    def parse_video_duration(string)
+      values = string.split(':')
+      if values.length == 1
+        values[0].to_i
+      elsif values.length == 2
+
+        minutes = values[0].to_i
+        seconds = values[1].to_i
+        minutes * 60 + seconds
+      elsif values.length == 3
+        hours = values[0].to_i
+        minutes = values[1].to_i
+        seconds = values[2].to_i
+        hours * 60 * 60 + minutes * 60 + seconds
+      else
+        days = values[0].to_i
+        hours = values[1].to_i
+        minutes = values[2].to_i
+        seconds = values[3].to_i
+        days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds
+      end
     end
 
     def get_metadata_hash(video)
@@ -106,6 +160,7 @@ module Scanner
       video['comments']['data'].each { |comment| comments << {content: comment['message']} }
       comments
     end
+
   end
 
 end
