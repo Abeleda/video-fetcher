@@ -6,7 +6,9 @@ ActiveAdmin.register Channel do
     selectable_column
     id_column
     column :name
-    column :url
+    column :url do |channel|
+      link_to channel.url, channel.url, target: '_blank'
+    end
     column() { |c| status_tag c.platform }
     column do |channel|
       link_to 'Videos', "/admin/videos?q%5Bchannel_id_eq%5D=#{channel.id}"

@@ -8,14 +8,16 @@ ActiveAdmin.register Video do
 
   index do
     column :channel_id do |video|
-      link_to video.channel.name, admin_channel_path(video.channel)
+      link_to video.channel.name, admin_channel_path(video.channel), target: '_blank'
     end
     column :title
     column :type do |video|
       status_tag video.channel.platform
     end
     column :duration
-    column :url
+    column :url do |video|
+      link_to video.url, video.url
+    end
     column :published
     column do |video|
       link_to 'Metadata', "/admin/metadata?q%5Bvideo_id_eq%5D=#{video.id}"
