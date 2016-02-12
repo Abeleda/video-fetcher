@@ -9,11 +9,10 @@ ActiveAdmin.register Channel do
     column :url do |channel|
       link_to channel.url, channel.url, target: '_blank'
     end
-    column() { |c| status_tag c.platform }
+    column { |c| status_tag c.platform }
     column do |channel|
       link_to 'Videos', "/admin/videos?q%5Bchannel_id_eq%5D=#{channel.id}"
     end
-    # column :frequency
     actions
   end
 

@@ -1,6 +1,6 @@
 module Updater
   class Channel
-    include Service
+    include PrintJSON
 
     def initialize(channel, app_id, app_secret)
       @channel = channel
@@ -22,8 +22,8 @@ module Updater
         Scanner::Facebook.new(@channel, @app_id, @app_secret).scan do |videos, meta, comments, times|
 
           if DEBUG
-            Service::PrintJSON.save_json_to_file videos, 'videos'
-            Service::PrintJSON.save_json_to_file meta, 'meta'
+            save_json_to_file videos, 'videos'
+            save_json_to_file meta, 'meta'
           end
 
           ActiveRecord::Base.transaction do

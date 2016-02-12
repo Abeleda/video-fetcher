@@ -30,6 +30,4 @@ ActiveAdmin.register Video do
 
   actions :all, except: [:create, :new]
 
-  permit_params :channel_id, :title, :published, :modified, :duration, :url, :uid, :attachment
-
 end

@@ -6,6 +6,7 @@ include ActionView::Helpers::TextHelper
 
 module Scanner
   class Facebook
+    include PrintJSON
     NUMBER_OF_OBJECTS_IN_REQUEST = 25 # Do not set this constant to more than 100
     BREAK_AFTER = 100
     SLEEP_TIME = 1
@@ -77,7 +78,7 @@ module Scanner
       data = (@graph_collection.class == Koala::Facebook::API::GraphCollection) ? \
         @graph_collection.raw_response['data'] : @graph_collection['feed']['data']
       return false if data == []
-      Service::PrintJSON.save_json_to_file data, 'facebook' if DEBUG
+      save_json_to_file data, 'facebook' if DEBUG
 
       data.each do |v|
         if v['type'] == 'video'

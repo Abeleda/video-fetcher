@@ -10,6 +10,4 @@ class Channel < ActiveRecord::Base
   validates :url, presence: true
   validates :platform, presence: true
 
-  # if (@channel.platform == :youtube)
-
 end

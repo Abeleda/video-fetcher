@@ -21,7 +21,4 @@ ActiveAdmin.register Metadata do
 
   actions :all, except: [:create, :new]
 
-
-  permit_params :video_id, :likes, :views, :dislikes, :comments, :shares, :video_id
-
 end
