@@ -1,1 +1,1 @@
-DEBUG = true
+DEBUG = Rails.env.development? ? true : false

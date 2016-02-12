@@ -16,10 +16,12 @@ module Scanner
 
     def initialize(channel, app_id, app_secret)
       @channel = channel
-      # Koala.http_service.faraday_middleware = Proc.new do |builder|
-      #   builder.use Faraday::Response::Logger
-      #   Koala::HTTPService::DEFAULT_MIDDLEWARE.call(builder)
-      # end
+      if DEBUG
+        Koala.http_service.faraday_middleware = Proc.new do |builder|
+          builder.use Faraday::Response::Logger
+          Koala::HTTPService::DEFAULT_MIDDLEWARE.call(builder)
+        end
+      end
       oauth = Koala::Facebook::OAuth.new(app_id, app_secret)
       token = oauth.get_app_access_token
       @graph = Koala::Facebook::API.new(token)
@@ -53,12 +55,28 @@ module Scanner
     private
 
     def fetch_videos
+      data = get_data_from_facebook
+      return false unless data
+      data.each do |v|
+        if v['type'] == 'video'
+          video = get_video_hash(v)
+          metadata = get_metadata_hash(v)
+          comments = get_video_comments(v)
+          yield video, metadata, comments
+        end
+      end
+
+      return true
+    end
+
+    def get_data_from_facebook
       begin
         before = Time.now
-
         if @graph_collection.nil?
-          @graph_collection = @graph.get_connection(@user['id'],
-            "?fields=feed.limit(#{NUMBER_OF_OBJECTS_IN_REQUEST}){object_id,source,message,created_time,updated_time,id,type,properties,shares,likes.summary(true).limit(0),comments.summary(true).limit(10)}")
+          @graph_collection = @graph.get_connection(@user['id'], "?fields=feed.limit(#{NUMBER_OF_OBJECTS_IN_REQUEST})
+                                                                  {object_id,source,message,created_time,updated_time,
+                                                                  id,type,properties,shares,likes.summary(true).limit(0),
+                                                                  comments.summary(true).limit(10)}")
         else
           if @graph_collection.class == Koala::Facebook::API::GraphCollection
             @graph_collection = @graph_collection.next_page
@@ -74,22 +92,11 @@ module Scanner
         puts exception.backtrace
         raise exception
       end
-
+      return nil if @graph_collection == []
       data = (@graph_collection.class == Koala::Facebook::API::GraphCollection) ? \
         @graph_collection.raw_response['data'] : @graph_collection['feed']['data']
-      return false if data == []
       save_json_to_file data, 'facebook' if DEBUG
-
-      data.each do |v|
-        if v['type'] == 'video'
-          video = get_video_hash(v)
-          metadata = get_metadata_hash(v)
-          comments = get_video_comments(v)
-          yield video, metadata, comments
-        end
-      end
-
-      return true
+      return data
     end
 
     def get_video_hash(video)
@@ -113,7 +120,7 @@ module Scanner
           end
         end
       end
-      nil
+      return nil
     end
 
     def parse_video_duration(string)
@@ -152,22 +159,6 @@ module Scanner
       comments = []
       video['comments']['data'].each { |comment| comments << {content: comment['message']} }
       comments
-    end
-
-    def print_stats(hash)
-      puts "\nStatistics:\n\nMin: #{hash[:min]} seconds.\nAverage: #{hash[:average]} seconds.\nMax: #{hash[:max]}." if hash
-    end
-
-    def get_stats(data)
-      return nil if data.count == 0
-      sum = 0
-      data.each {|t| sum += t}
-      average = sum / data.count
-      {
-        min: data.min,
-        average: average,
-        max: data.max
-      }
     end
 
   end
