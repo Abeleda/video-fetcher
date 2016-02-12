@@ -20,6 +20,7 @@ app/services/run.rb
 app/services/videos.json
 app/services/meta.json
 app/services/facebook.json
+app/services/vimeo.json
 *.sublime-project
 *.sublime-workspace
 
