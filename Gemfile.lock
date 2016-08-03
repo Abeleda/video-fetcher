@@ -150,11 +150,11 @@ GEM
     minitest (5.8.4)
     multi_json (1.11.2)
     multipart-post (2.0.0)
-    mysql2 (0.4.2)
     netrc (0.11.0)
     nokogiri (1.6.7.2)
       mini_portile2 (~> 2.0.0.rc2)
     orm_adapter (0.5.0)
+    pg (0.18.4)
     polyamorous (1.3.0)
       activerecord (>= 3.0)
     pry (0.10.3)
@@ -274,7 +274,7 @@ DEPENDENCIES
   json
   koala
   meta_request
-  mysql2
+  pg
   pry-rails
   quiet_assets
   rails (= 4.2.5.1)
@@ -289,4 +289,4 @@ DEPENDENCIES
   yt (~> 0.25.5)
 
 BUNDLED WITH
-   1.11.2
+   1.12.5
