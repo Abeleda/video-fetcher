@@ -51,6 +51,9 @@ def create_channels(partner_id)
     Channel.create!(name: 'PlayStation', url: 'https://www.facebook.com/PlayStation', platform: :facebook, partner_id: partner_id)
     Channel.create!(name: 'Xbox', url: 'https://www.facebook.com/xbox', platform: :facebook, partner_id: partner_id)
 
+    # Vimeo
+
+    Channel.create!(name: 'Documentary Film', url: 'https://vimeo.com/channels/documentaryfilm', platform: :vimeo, partner_id: partner_id)
   end
 end
 
