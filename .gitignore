@@ -26,5 +26,6 @@ app/services/vimeo.json
 
 .ruby-gemset
 .ruby-version
+credentials.json
 delete_script.rb
 .byebug_history

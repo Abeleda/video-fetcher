@@ -26,6 +26,5 @@ module API
       yield json if block_given?
       return !@next_page.nil?
     end
-
   end
 end
